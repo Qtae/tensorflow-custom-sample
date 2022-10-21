@@ -8,17 +8,15 @@ class CustomTrainStepModel(tf.keras.Model):
         self.model = self.simple_model(input_layer, classes)
 
     def compile(self, optimizer='rmsprop', loss=None, metrics=None):
-        super(CustomTrainStepModel, self).compile()
-        self.optimizer = optimizer
-        self.loss = loss
-        self.custom_metrics = metrics
+        super(CustomTrainStepModel, self).compile(optimizer=optimizer, loss=loss,
+                                                  metrics=metrics)
 
     def train_step(self, data):
         x, y_true = data
         with tf.GradientTape() as tape:
             y_pred = self.model(x, training=True)
             #calculate loss
-            loss = self.loss(y_true, y_pred)
+            loss = self.compiled_loss(y_true, y_pred)
         #get trainable parameters in model
         trainable_vars = self.model.trainable_variables
         #calculate gradient
@@ -26,7 +24,7 @@ class CustomTrainStepModel(tf.keras.Model):
         #update weight
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         #calculate accuracy
-        self.custom_metrics[0].update_state(y_true, y_pred)
+        self.compiled_metrics[0].update_state(y_true, y_pred)
         #update metrics
         results = {"loss": loss, "accuracy": self.custom_metrics[0].result()}
         return results
@@ -35,11 +33,11 @@ class CustomTrainStepModel(tf.keras.Model):
         x, y_true = data
         y_pred = self.model(x, training=False)
         # calculate loss
-        val_loss = self.loss(y_true, y_pred)
+        val_loss = self.compiled_loss(y_true, y_pred)
         #calculate accuracy
-        self.custom_metrics[0].update_state(y_true, y_pred)
+        self.compiled_metrics[0].update_state(y_true, y_pred)
         # update metrics
-        results = {"loss": val_loss, "accuracy": self.custom_metrics[0].result()}
+        results = {"loss": val_loss, "accuracy": self.compiled_metrics[0].result()}
         return results
 
     def summary(self):
@@ -54,9 +52,13 @@ class CustomTrainStepModel(tf.keras.Model):
         x = tf.keras.layers.Conv2D(128, (3, 3), activation='relu', padding='same')(x)
         x = tf.keras.layers.MaxPooling2D((2, 2), strides=(2, 2))(x)
 
+        x = tf.keras.layers.Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+        x = tf.keras.layers.Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+        x = tf.keras.layers.MaxPooling2D((2, 2), strides=(2, 2))(x)
+
         x = tf.keras.layers.Flatten()(x)
-        x = tf.keras.layers.Dense(1024, activation='relu')(x)
-        x = tf.keras.layers.Dense(1024, activation='relu')(x)
+        x = tf.keras.layers.Dense(512, activation='relu')(x)
+        x = tf.keras.layers.Dense(512, activation='relu')(x)
         output = tf.keras.layers.Dense(classes, activation='softmax', name='predictions')(x)
 
         model = tf.keras.models.Model(inputs=input, outputs=output)

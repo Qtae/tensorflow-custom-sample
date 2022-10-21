@@ -7,13 +7,17 @@ from data import load_dataset
 
 
 if __name__ == '__main__':
+    #set directories
+    root_dir = 'D:/Work/99_OT/'
+    dataset_dir = root_dir + 'Cifar10/Train'
+    model_save_dir = root_dir + 'Model/SavedModel'
+    checkpoint_dir = root_dir + 'Model/CheckPoint'
+
     #set hyperparameters
     epochs = 400
     batch_size = 16
-    learning_rate = 0.001
+    learning_rate = 0.0001
     valid_ratio = 0.2
-    dataset_dir = 'D:/Work/99_OT/Cifar10/Train'
-    model_save_dir = 'D:/Work/99_OT/Model/SavedModel'
 
     #load dataset
     print('-----------------------load dataset-----------------------')
@@ -27,13 +31,11 @@ if __name__ == '__main__':
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
                   loss=CustomLoss(), metrics=[tf.keras.metrics.Accuracy(name='accuracy')])
     model.summary()
-    ckptfile = 'D:/Work/99_OT/Model/CheckPoint_20220729_1447/e399-acc0.9499-val_acc0.8649-val_loss0.0000.hdf5'
-    model.model.load_weights(ckptfile)
 
     #set callback list
-    custom_checkpoint = CustomCheckpoint(checkpoint_dir='D:/Work/99_OT/Model/CheckPoint/')
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.8, patience=3,
-                                                     cooldown=10, min_lr=0.000001, mode='auto')
+    custom_checkpoint = CustomCheckpoint(checkpoint_dir=checkpoint_dir)
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=10,
+                                                     cooldown=10, min_lr=0.000001, mode='auto', verbose=True)
     callbacks_list = [custom_checkpoint, reduce_lr]
 
     #train
